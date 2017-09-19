@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_height="2dp"
+    android:layout_width="10dp"
+    android:theme="@style/AppTheme">
+
+<item android:id="@+id/action_logout"
+    android:title="Logout"/>
+
+<item android:id="@+id/action_settings"
+    android:title="Settings" />
+
+<item android:id="@+id/action_login"
+    android:title="Login"
+    app:showAsAction="ifRoom"
+    android:orderInCategory="1"
+    android:menuCategory="secondary"
+    android:icon="@mipmap/ic_login" />
+</menu>

@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "354086833335",
+    "project_id": "firebase-guitarview"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:354086833335:android:f193f38d31b0a195",
+        "android_client_info": {
+          "package_name": "com.GuitarView"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "354086833335-od0gmmg4mpdp1ts43sp57medj12nc0ju.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.GuitarView",
+            "certificate_hash": "001291a600b304a08cb224b541b8dda14b4ac6f6"
+          }
+        },
+        {
+          "client_id": "354086833335-58f2bkoruj3lj4tnva2evodkcuh6ubch.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBfBUVsOj7jULYZC3tOx4ukOCx_91_pFTo"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 1,
+          "other_platform_oauth_client": []
+        },
+        "ads_service": {
+          "status": 1
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
