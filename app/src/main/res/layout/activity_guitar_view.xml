@@ -7,5 +7,5 @@ android:layout_height="match_parent">
     android:id="@+id/tvTitleBar"
     android:layout_width="300dp"
     android:layout_height="20dp"
-    android:text="Place guitar pictures here."/>
+    android:text="GUITARS!"/>
 </LinearLayout>
