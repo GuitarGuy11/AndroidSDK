@@ -1,11 +1,12 @@
-package com.guitarview.views;
+package com.guitarview.controllers;
 
-import android.support.annotation.NonNull;
-import android.support.design.widget.NavigationView;
-import android.support.v7.app.AppCompatActivity;
+import android.arch.lifecycle.ViewModelProviders;
+import android.content.res.Configuration;
 import android.os.Bundle;
 import android.os.AsyncTask;
+import android.support.annotation.NonNull;
 import android.support.v7.app.ActionBarDrawerToggle;
+import android.support.v7.app.AppCompatActivity;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.support.v4.widget.DrawerLayout;
@@ -17,31 +18,28 @@ import android.graphics.BitmapFactory;
 import android.graphics.drawable.BitmapDrawable;
 import android.support.v4.content.res.ResourcesCompat;
 import android.app.AlertDialog;
-import android.widget.ListView;
 import java.net.HttpURLConnection;
 import java.io.InputStream;
 import java.net.URL;
-import com.google.android.gms.auth.api.signin.GoogleSignInResult;
-import com.google.android.gms.auth.api.Auth;
 
 import com.guitarview.R;
-import com.guitarview.api.common.NavigationItemAdapter;
-import com.guitarview.api.common.Profile;
+import com.guitarview.common.NavigationItemAdapter;
+import com.guitarview.common.OnPostExecuteListener;
+import com.guitarview.api.repository.ProfileRepository;
+import com.guitarview.models.BaseModel;
 
+public class BaseController extends AppCompatActivity {
 
-public class BaseView extends AppCompatActivity {
-
+    private BaseModel baseViewModel;
     private Menu currentMenu;
-    private Profile profile;
     public ActionBarDrawerToggle drawerToggle;
     public DrawerLayout drawerLayout;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
-        setContentView(R.layout.activity_base_view);
-
+        setContentView(R.layout.activity_base);
+        initializeModel();
         initializeMenu();
     }
 
@@ -49,9 +47,7 @@ public class BaseView extends AppCompatActivity {
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.menu, menu);
         currentMenu = menu;
-
-        initializeProfile();
-
+        setProfileResult();
         return true;
     }
 
@@ -64,10 +60,15 @@ public class BaseView extends AppCompatActivity {
 
         switch (id) {
             case R.id.action_login:
-                onSignInClick();
+                baseViewModel.signIn();
                 break;
             case R.id.action_logout:
-                onSignOutClick();
+                if(item.getTitle() == "Login") {
+                    baseViewModel.signIn();
+                }
+                else {
+                    baseViewModel.signOut();
+                }
                 break;
             case android.R.id.home:
                 //onMenuExpand();
@@ -77,62 +78,65 @@ public class BaseView extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
+    public void onPostCreate(Bundle savedInstanceState) {
+        super.onPostCreate(savedInstanceState);
+        drawerToggle.syncState();
+    }
+
+    @Override
+    public void onConfigurationChanged(Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        drawerToggle.onConfigurationChanged(newConfig);
+    }
+
+    private void initializeModel() {
+        try {
+            baseViewModel = ViewModelProviders.of(this).get(BaseModel.class);
+            baseViewModel.init(new ProfileRepository(this));
+
+            baseViewModel.setOnPostProfileListener(new OnPostExecuteListener() {
+                @Override
+                public boolean onPostExecute(@NonNull String result) {
+                    setProfileResult();
+                    return false;
+                }
+            });
+        }
+        catch(Exception ex)
+        {
+            SendMessage(ex.getMessage());
+        }
+
+    }
+
     private void initializeMenu() {
         getSupportActionBar().setHomeButtonEnabled(true);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
-        drawerLayout = (DrawerLayout)findViewById(R.id.drawer_layout);
+        drawerLayout = findViewById(R.id.drawer_layout);
         drawerToggle = new ActionBarDrawerToggle(this, drawerLayout, R.string.app_name, R.string.app_name);
         drawerLayout.setDrawerListener(drawerToggle);
 
-        NavigationView navigationView = (NavigationView)findViewById(R.id.navigation_view);
-        navigationView.bringToFront();
-        ListView menuView = (ListView)findViewById(R.id.menu_view);
-        menuView.bringToFront();
-
-        new NavigationItemAdapter(this);
-    }
-
-    private void initializeProfile() {
-        profile = new Profile(this);
-        setProfileResult(profile.SilentSignIn());
-    }
-
-    private void onSignInClick() {
-        try {
-            profile.SignIn();
-        } catch (Exception ex) {
-            SendMessage(ex.getMessage());
-        }
-    }
-
-    private void onSignOutClick() {
-        try {
-            profile.SignOut();
-            setProfileResult(null);
-        } catch (Exception ex) {
-            SendMessage(ex.getMessage());
-        }
+        findViewById(R.id.navigation_view).bringToFront();
+        NavigationItemAdapter adapter = new NavigationItemAdapter(this);
+        adapter.init();
+        adapter.selectView(0);
     }
 
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-
-        if (requestCode == Profile.LOGIN) {
-            setProfileResult(Auth.GoogleSignInApi.getSignInResultFromIntent(data));
-        }
+        baseViewModel.onActivityResult(requestCode, resultCode, data);
     }
 
-    private void setProfileResult(GoogleSignInResult result) {
-        if (result != null && result.isSuccess()) {
-            profile.Account = result.getSignInAccount();
-        }
+    private void setProfileResult() {
+
+        ProfileRepository profile = baseViewModel.getProfile();
 
         MenuItem mnuLogin = currentMenu.findItem(R.id.action_login);
         MenuItem mnuLogout = currentMenu.findItem(R.id.action_logout);
 
-        if (profile.Account  == null) {
+        if(profile == null || profile.Account  == null) {
             mnuLogin.setIcon(ResourcesCompat.getDrawable(getResources(), R.drawable.ic_login, null));
             mnuLogout.setTitle("Login");
         } else {
@@ -146,7 +150,7 @@ public class BaseView extends AppCompatActivity {
     public void SendMessage(String message) {
         AlertDialog.Builder dlgAlert = new AlertDialog.Builder(this);
         dlgAlert.setMessage(message);
-        dlgAlert.setTitle("GuitarView...");
+        dlgAlert.setTitle("GuitarController...");
         dlgAlert.setCancelable(true);
         dlgAlert.create().show();
     }

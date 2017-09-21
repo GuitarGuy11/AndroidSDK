@@ -1,8 +1,8 @@
-package com.guitarview.api.common;
+package com.guitarview.common;
 
-import android.app.Activity;
-import android.app.Fragment;
-import android.app.FragmentManager;
+import android.support.v7.app.AppCompatActivity;
+import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentManager;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v4.widget.DrawerLayout;
@@ -15,8 +15,8 @@ import android.widget.TextView;
 
 import com.guitarview.R;
 import com.guitarview.api.json.JsonRetriever;
-import com.guitarview.views.GuitarView;
-import com.guitarview.views.HomeView;
+import com.guitarview.controllers.GuitarController;
+import com.guitarview.controllers.HomeController;
 
 import java.util.ArrayList;
 import org.json.JSONObject;
@@ -26,14 +26,16 @@ import android.widget.ListView;
 
 public class NavigationItemAdapter extends BaseAdapter {
 
-    private Activity _activity;
+    private AppCompatActivity _activity;
     private ArrayList<String> _items;
 
-    public NavigationItemAdapter(Activity activity)
-    {
+    public NavigationItemAdapter(AppCompatActivity activity) {
         _activity = activity;
         _items = new ArrayList<>();
+    }
 
+    public void init()
+    {
         JsonRetriever retriever = new JsonRetriever();
         retriever.setOnPostExecuteListener(new OnPostExecuteListener() {
             @Override
@@ -46,33 +48,37 @@ public class NavigationItemAdapter extends BaseAdapter {
     }
 
     @Override
-    public View getView(int position, View convertView, ViewGroup container) {
+    public View getView(final int position, View convertView, ViewGroup container) {
         LayoutInflater inflater = _activity.getLayoutInflater();
-        View row = inflater.inflate(R.layout.navigation_view_item, container, false);
+        View row = inflater.inflate(R.layout.navigation_item, container, false);
         setRowView(row, position);
 
-        final int i = position;
         row.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Fragment fragment = getFragment(i);
-                Bundle args = new Bundle();
-                args.putInt("GuitarView", 0);
-                fragment.setArguments(args);
-
-                // Insert the fragment by replacing any existing fragment
-                FragmentManager fragmentManager = _activity.getFragmentManager();
-                fragmentManager.beginTransaction()
-                        .replace(R.id.content_frame, fragment)
-                        .commit();
-
-                // how to hide the nav panel on click?
-                DrawerLayout drawerLayout = (DrawerLayout)_activity.findViewById(R.id.drawer_layout);
-                drawerLayout.closeDrawers();
+                selectView(position);
             }
         });
 
         return (row);
+    }
+
+    public void selectView(int position)
+    {
+        Fragment fragment = getFragment(position);
+        Bundle args = new Bundle();
+        args.putInt("GuitarController", 0);
+        fragment.setArguments(args);
+
+        // Insert the fragment by replacing any existing fragment
+        FragmentManager fragmentManager = _activity.getSupportFragmentManager();
+        fragmentManager.beginTransaction()
+                .replace(R.id.content_frame, fragment)
+                .commit();
+
+        // how to hide the nav panel on click?
+        DrawerLayout drawerLayout = _activity.findViewById(R.id.drawer_layout);
+        drawerLayout.closeDrawers();
     }
 
     private void setRowView(View row, int position)
@@ -89,13 +95,17 @@ public class NavigationItemAdapter extends BaseAdapter {
 
     private Fragment getFragment(int position)
     {
-        String item = _items.get(position);
+        String item = "";
+        if(_items != null && _items.size() > position) {
+            item = _items.get(position);
+        }
+
         switch (item)
         {
-            case GuitarView.NAVIGATION_KEY:
-                return new GuitarView();
+            case GuitarController.NAVIGATION_KEY:
+                return new GuitarController();
             default:
-                return new HomeView();
+                return new HomeController();
         }
     }
 
@@ -116,21 +126,6 @@ public class NavigationItemAdapter extends BaseAdapter {
     public CharSequence[] getAutofillOptions() {
         return new CharSequence[0];
     }
-
-    /*private Intent getNavigationIntent(String menuItem)
-    {
-        Intent intent;
-        switch (menuItem.toString())
-        {
-            case "Guitars":
-                intent = new Intent(_activity, GuitarView.class);
-                break;
-            default:
-                intent = new Intent(_activity, HomeView.class);
-                break;
-        }
-        return intent;
-    }*/
 
     private void addCategories(String json)
     {

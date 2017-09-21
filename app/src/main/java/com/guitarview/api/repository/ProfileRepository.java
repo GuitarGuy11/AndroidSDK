@@ -1,7 +1,8 @@
-package com.guitarview.api.common;
+package com.guitarview.api.repository;
 
+import android.arch.lifecycle.LiveData;
+import android.arch.lifecycle.MutableLiveData;
 import android.content.Intent;
-import android.support.v7.app.AppCompatActivity;
 import com.google.android.gms.auth.api.Auth;
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.google.android.gms.auth.api.signin.GoogleSignInResult;
@@ -10,18 +11,18 @@ import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.OptionalPendingResult;
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
 import android.os.StrictMode;
+import android.support.v7.app.AppCompatActivity;
 
-public class Profile implements GoogleApiClient.OnConnectionFailedListener {
+public class ProfileRepository implements GoogleApiClient.OnConnectionFailedListener {
 
     public static int LOGIN = 2000;
 
     public GoogleSignInAccount Account;
-
     private GoogleApiClient _googleApiClient;
     private Intent _signInIntent;
     private AppCompatActivity _activity;
 
-    public Profile(AppCompatActivity activity)
+    public ProfileRepository(AppCompatActivity activity)
     {
         _activity = activity;
         initializeAuthentication();
@@ -44,31 +45,46 @@ public class Profile implements GoogleApiClient.OnConnectionFailedListener {
         }
     }
 
-    public void SignIn() {
+    public void signIn() {
         if (Account == null) {
             _signInIntent = Auth.GoogleSignInApi.getSignInIntent(_googleApiClient);
-            _activity.startActivityForResult(_signInIntent, Profile.LOGIN);
+            _activity.startActivityForResult(_signInIntent, ProfileRepository.LOGIN);
         }
     }
 
-    public void SignOut() {
-        if (Account == null) {
-            SignIn();
-        } else {
+    public LiveData<ProfileRepository> signOut() {
+        if (Account != null) {
             Auth.GoogleSignInApi.signOut(_googleApiClient);
             Account = null;
         }
+        return toMutableData();
     }
 
-    public GoogleSignInResult SilentSignIn() {
-        OptionalPendingResult<GoogleSignInResult> pendingResult = Auth.GoogleSignInApi.silentSignIn(_googleApiClient);
-        if (pendingResult.isDone()) {
-            return pendingResult.get();
+    public LiveData<ProfileRepository> silentSignIn() {
+        if(Account == null) {
+            OptionalPendingResult<GoogleSignInResult> pendingResult = Auth.GoogleSignInApi.silentSignIn(_googleApiClient);
+            if (pendingResult.isDone()) {
+                setAccount(pendingResult.get());
+            }
         }
-        return null;
+        return toMutableData();
+    }
+
+    public LiveData<ProfileRepository> toMutableData()
+    {
+        final MutableLiveData<ProfileRepository> data = new MutableLiveData<>();
+        data.setValue(this);
+        return data;
     }
 
     public void onConnectionFailed(ConnectionResult result) {
         Account = null;
+    }
+
+    public void setAccount(GoogleSignInResult result)
+    {
+        if (result != null && result.isSuccess()) {
+            Account = result.getSignInAccount();
+        }
     }
 }
